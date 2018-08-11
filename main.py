@@ -1,26 +1,12 @@
 import os
 import argparse
-import logging
+import PairDataset
+import torchvision
+from torch.utils.data import DataLoader
+from log_utils import get_logger
 
-
-def log_config():
-    console_logs_lvl = file_logs_lvl = logging.INFO  # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
-    console_logs_format = file_logs_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-    logger = logging.getLogger(__name__)
-    logger.setLevel(console_logs_lvl)
-    logging.basicConfig(format=console_logs_format)
-
-    handler = logging.FileHandler('logs.txt', mode='w')
-    handler.setLevel(file_logs_lvl)
-    handler.setFormatter(logging.Formatter(file_logs_format))
-    logger.addHandler(handler)
-
-    return logger
-
-
-log = log_config()
-
+log = get_logger()
+folder = False
 
 # batch size, #workers, content/style resizes, autoencoders weights paths, beta to balance texture synthesis
 def parse_args():
@@ -33,7 +19,10 @@ def parse_args():
     parser.add_argument('--contentDir', help='path of the directory containing the content images to be trasformed')
     parser.add_argument('--styleDir', help='path of the directory containing the style images to be used')
 
-    parser.add_argument('--outDir', default='./', help='path of the directory where stylized results will be saved')
+    parser.add_argument('--contentSize', type=int, help='New (minimum) size for the content image. To keep the original size set to 0') # default=768 in the paper
+    parser.add_argument('--styleSize', type=int, help='New (minimum) size for the style image. To keep the original size set to 0')
+
+    parser.add_argument('--outDir', default='./output', help='path of the directory where stylized results will be saved')
 
     parser.add_argument('--alpha', type=float, default=0.6, help='hyperparameter controlling the blending of WCT features and content features')
 
@@ -52,13 +41,15 @@ def validate_args(args):
         ok &= os.path.splitext(args.style)[1].lower().endswith(supported_img_formats)
         if not ok: raise ValueError('content and style must be existing image paths')
     else:
+        global folder
+        folder = True
         if not os.path.isdir(args.contentDir) or not os.path.isdir(args.styleDir):
             raise ValueError('contentDir and styleDir must be existing directory paths')
         ok = any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.contentDir)])
         ok &= any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.styleDir)])
         if not ok: raise ValueError('contentDir and styleDir must contain at least one image file')
 
-    if 0. < args.alpha < 1.:
+    if not 0. < args.alpha < 1.:
         raise ValueError('alpha value MUST be between 0 and 1')
 
     return args
@@ -68,11 +59,20 @@ def main():
     args = validate_args(parse_args())
 
     try:
-        os.makedirs(args.outDir)
+        os.makedirs(args.outDir, exist_ok=True)
     except Exception:
         log.exception('Error encoutered while creating output directory')
+
+    transforms = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+    ])
+    cspd = PairDataset.ContentStylePairDataset(args.content, args.style, content_transforms=transforms, style_transforms=transforms) if not folder \
+        else PairDataset.ContentStylePairDataset(args.contentDir, args.styleDir, content_transforms=transforms, style_transforms=transforms)
+    cspd_loader = DataLoader(cspd, batch_size=1, shuffle=False, num_workers=0)
+
+
 
 
 if __name__ == "__main__":
     # execute only if run as a script
-    exit(main())
+    main()

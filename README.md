@@ -1,6 +1,10 @@
 # deep-transfer
 
 
+#### Implementations
+* resize content/style input imgs based on cli args
+
+* torchvision.transforms.LinearTransformation(transformation_matrix) for whitening [here](torchvision.transforms.LinearTransformation(transformation_matrix))
 
 #### Possibilities
 * satellite images style transfer
