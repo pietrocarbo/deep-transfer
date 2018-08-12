@@ -6,6 +6,8 @@
 
 * torchvision.transforms.LinearTransformation(transformation_matrix) for whitening [here](torchvision.transforms.LinearTransformation(transformation_matrix))
 
+* missing first convolution in decoder?
+
 #### Possibilities
 * satellite images style transfer
 * photorealistic style transfer

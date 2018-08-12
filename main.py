@@ -2,8 +2,10 @@ import os
 import argparse
 import PairDataset
 import torchvision
-from torch.utils.data import DataLoader
+from imshow_utils import *
+import autoencoderWCT
 from log_utils import get_logger
+from torch.utils.data import DataLoader
 
 log = get_logger()
 folder = False
@@ -21,6 +23,17 @@ def parse_args():
 
     parser.add_argument('--contentSize', type=int, help='New (minimum) size for the content image. To keep the original size set to 0') # default=768 in the paper
     parser.add_argument('--styleSize', type=int, help='New (minimum) size for the style image. To keep the original size set to 0')
+
+    parser.add_argument('--encoder1-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv1_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv1_1')
+    parser.add_argument('--encoder2-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv2_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv2_1')
+    parser.add_argument('--encoder3-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv3_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv3_1')
+    parser.add_argument('--encoder4-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv4_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv4_1')
+    parser.add_argument('--encoder5-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv5_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv5_1')
+    parser.add_argument('--decoder1-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv1_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv1_1)')
+    parser.add_argument('--decoder2-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv2_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv2_1)')
+    parser.add_argument('--decoder3-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv3_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv3_1)')
+    parser.add_argument('--decoder4-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv4_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv4_1)')
+    parser.add_argument('--decoder5-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv5_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv5_1)')
 
     parser.add_argument('--outDir', default='./output', help='path of the directory where stylized results will be saved')
 
@@ -70,7 +83,11 @@ def main():
         else PairDataset.ContentStylePairDataset(args.contentDir, args.styleDir, content_transforms=transforms, style_transforms=transforms)
     cspd_loader = DataLoader(cspd, batch_size=1, shuffle=False, num_workers=0)
 
-
+    for sample in cspd_loader:
+        model = autoencoderWCT.SingleLevelWCT(args)
+        model.eval()
+        out = model(sample['content'], sample['style'])
+        tensor_imshow(out.detach().squeeze(0))
 
 
 if __name__ == "__main__":
