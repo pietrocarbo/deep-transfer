@@ -1,5 +1,6 @@
 import torch
 
+# TODO
 def wctransform(alpha, cf, sf, outf=None):
 
     cf = cf.double()
@@ -50,6 +51,7 @@ def wctransform(alpha, cf, sf, outf=None):
     targetFeature = targetFeature.view_as(cf)
     ccsF = alpha * targetFeature + (1.0 - alpha) * cf
     ccsF = ccsF.float().unsqueeze(0)
-    outf.data.resize_(ccsF.size()).copy_(ccsF)
 
-    return outf
+    # outf.data.resize_(ccsF.size()).copy_(ccsF)
+
+    return ccsF

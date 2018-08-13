@@ -1,5 +1,6 @@
 deep-transfer.iml
 pytorch_tutorials/
+PytorchWCT/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
