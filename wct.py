@@ -1,42 +1,44 @@
 import torch
 
-# TODO
-def wctransform(alpha, cf, sf, outf=None):
+
+def wctransform(alpha, cf, sf):
 
     cf = cf.double()
-    sf = sf.double()
-    C,W,H = cf.size(0), cf.size(1), cf.size(2)
-    _,W1,H1 = sf.size(0), sf.size(1), sf.size(2)
-    cFView = cf.view(C, -1)
-    sFView = sf.view(C, -1)
+    Cc, Wc, Hc = cf.size(0), cf.size(1), cf.size(2)
+    cfv = cf.view(Cc, -1)  # c x (h x w)
 
+    c_mean = torch.mean(cf, 1) # perform mean for each row
+    c_mean = c_mean.unsqueeze(1).expand_as(cf) # add dim and replicate mean on rows
+    cf = cf - c_mean # subtract mean element-wise
 
+    cCov = torch.mm(cf, cf.t()).div((Wc * Hc) - 1) # construct covariance matrix
 
-    cFSize = cf.size()
-    c_mean = torch.mean(cf, 1) # c x (h x w)
-    c_mean = c_mean.unsqueeze(1).expand_as(cf)
-    cf = cf - c_mean
+    c_u, c_e, c_v = torch.svd(cCov, some=False) # singular value decomposition
 
-    contentConv = torch.mm(cf, cf.t()).div(cFSize[1] - 1) + torch.eye(cFSize[0]).double()
-    c_u,c_e,c_v = torch.svd(contentConv,some=False)
-
-    k_c = cFSize[0]
-    for i in range(cFSize[0]):
+    k_c = Cc
+    for i in range(Cc):
         if c_e[i] < 0.00001:
             k_c = i
             break
 
-    sFSize = sf.size()
-    s_mean = torch.mean(sf, 1)
-    sf = sf - s_mean.unsqueeze(1).expand_as(sf)
-    styleConv = torch.mm(sf, sf.t()).div(sFSize[1] - 1)
-    s_u,s_e,s_v = torch.svd(styleConv,some=False)
 
-    k_s = sFSize[0]
-    for i in range(sFSize[0]):
+    sf = sf.double()
+    _, Ws, Hs = sf.size(0), sf.size(1), sf.size(2)
+    sfv = sf.view(Cc, -1)
+
+    s_mean = torch.mean(sf, 1)
+    s_mean = s_mean.unsqueeze(1).expand_as(sf)
+    sf = sf - s_mean
+
+    sCov = torch.mm(sf, sf.t()).div((Ws * Hs) - 1)
+    s_u, s_e, s_v = torch.svd(sCov, some=False)
+
+    k_s = Cc # same number of channels ad content features
+    for i in range(Cc):
         if s_e[i] < 0.00001:
             k_s = i
             break
+
 
     c_d = (c_e[0:k_c]).pow(-0.5)
     step1 = torch.mm(c_v[:,0:k_c],torch.diag(c_d))

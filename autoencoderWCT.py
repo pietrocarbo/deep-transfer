@@ -22,8 +22,8 @@ class SingleLevelWCT(nn.Module):
         cf = self.e5(content_img).data.cpu().squeeze(0)
         sf = self.e5(style_img).data.cpu().squeeze(0)
 
-        outf = wctransform(self.alpha, cf, sf)
-        out = self.d5(outf)
+        csf = wctransform(self.alpha, cf, sf)
+        out = self.d5(csf)
 
         return out
 
