@@ -8,6 +8,11 @@
 
 * missing first convolution in decoder?
 
+* MISSING RELUs in encoders
+
+#### TODOs
+* computations on CUDA
+
 #### Possibilities
 * satellite images style transfer
 * photorealistic style transfer

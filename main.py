@@ -24,18 +24,13 @@ def parse_args():
     parser.add_argument('--contentSize', type=int, help='New (minimum) size for the content image. To keep the original size set to 0') # default=768 in the paper
     parser.add_argument('--styleSize', type=int, help='New (minimum) size for the style image. To keep the original size set to 0')
 
-    parser.add_argument('--encoder1-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv1_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv1_1')
-    parser.add_argument('--encoder2-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv2_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv2_1')
-    parser.add_argument('--encoder3-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv3_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv3_1')
-    parser.add_argument('--encoder4-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv4_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv4_1')
-    parser.add_argument('--encoder5-vgg19', default='models/autoencoder_vgg19/vgg_normalised_conv5_1.t7', help='Path to the .t7 file containing trained VGG19 upto conv5_1')
-    parser.add_argument('--decoder1-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv1_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv1_1)')
-    parser.add_argument('--decoder2-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv2_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv2_1)')
-    parser.add_argument('--decoder3-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv3_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv3_1)')
-    parser.add_argument('--decoder4-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv4_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv4_1)')
-    parser.add_argument('--decoder5-vgg19', default='models/autoencoder_vgg19/feature_invertor_conv5_1.t7', help='Path to the .t7 file containing trained VGG19 decoder (inverting features from conv5_1)')
+    parser.add_argument('--autoencoder1-vgg19', default='models/autoencoder_vgg19/vgg19_1', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv1_1')
+    parser.add_argument('--autoencoder2-vgg19', default='models/autoencoder_vgg19/vgg19_2', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv2_1')
+    parser.add_argument('--autoencoder3-vgg19', default='models/autoencoder_vgg19/vgg19_3', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv3_1')
+    parser.add_argument('--autoencoder4-vgg19', default='models/autoencoder_vgg19/vgg19_4', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv4_1')
+    parser.add_argument('--autoencoder5-vgg19', default='models/autoencoder_vgg19/vgg19_5', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv5_1')
 
-    parser.add_argument('--outDir', default='./output', help='path of the directory where stylized results will be saved')
+    parser.add_argument('--outDir', default='./outputs', help='path of the directory where stylized results will be saved')
 
     parser.add_argument('--alpha', type=float, default=0.6, help='hyperparameter controlling the blending of WCT features and content features')
 

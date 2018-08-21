@@ -4,56 +4,56 @@ import torch
 def wctransform(alpha, cf, sf):
 
     cf = cf.double()
-    Cc, Wc, Hc = cf.size(0), cf.size(1), cf.size(2)
-    cfv = cf.view(Cc, -1)  # c x (h x w)
+    c_channels, c_width, c_height = cf.size(0), cf.size(1), cf.size(2)
+    cfv = cf.view(c_channels, -1)  # c x (h x w)
 
-    c_mean = torch.mean(cf, 1) # perform mean for each row
-    c_mean = c_mean.unsqueeze(1).expand_as(cf) # add dim and replicate mean on rows
-    cf = cf - c_mean # subtract mean element-wise
+    c_mean = torch.mean(cfv, 1) # perform mean for each row
+    c_mean = c_mean.unsqueeze(1).expand_as(cfv) # add dim and replicate mean on rows
+    cfv = cfv - c_mean # subtract mean element-wise
 
-    cCov = torch.mm(cf, cf.t()).div((Wc * Hc) - 1) # construct covariance matrix
+    c_covm = torch.mm(cfv, cfv.t()).div((c_width * c_height) - 1) # construct covariance matrix
+    c_u, c_e, c_v = torch.svd(c_covm, some=False) # singular value decomposition
 
-    c_u, c_e, c_v = torch.svd(cCov, some=False) # singular value decomposition
-
-    k_c = Cc
-    for i in range(Cc):
+    k_c = c_channels
+    for i in range(c_channels):
         if c_e[i] < 0.00001:
             k_c = i
             break
 
 
     sf = sf.double()
-    _, Ws, Hs = sf.size(0), sf.size(1), sf.size(2)
-    sfv = sf.view(Cc, -1)
+    _, s_width, s_heigth = sf.size(0), sf.size(1), sf.size(2)
+    sfv = sf.view(c_channels, -1)
 
-    s_mean = torch.mean(sf, 1)
-    s_mean = s_mean.unsqueeze(1).expand_as(sf)
-    sf = sf - s_mean
+    s_mean = torch.mean(sfv, 1)
+    s_mean = s_mean.unsqueeze(1).expand_as(sfv)
+    sfv = sfv - s_mean
 
-    sCov = torch.mm(sf, sf.t()).div((Ws * Hs) - 1)
-    s_u, s_e, s_v = torch.svd(sCov, some=False)
+    s_covm = torch.mm(sfv, sfv.t()).div((s_width * s_heigth) - 1)
+    s_u, s_e, s_v = torch.svd(s_covm, some=False)
 
-    k_s = Cc # same number of channels ad content features
-    for i in range(Cc):
+    s_k = c_channels # same number of channels ad content features
+    for i in range(c_channels):
         if s_e[i] < 0.00001:
-            k_s = i
+            s_k = i
             break
 
 
     c_d = (c_e[0:k_c]).pow(-0.5)
-    step1 = torch.mm(c_v[:,0:k_c],torch.diag(c_d))
-    step2 = torch.mm(step1,(c_v[:,0:k_c].t()))
-    whiten_cF = torch.mm(step2, cf)
+    s_d = (s_e[0:s_k]).pow(0.5)
 
-    s_d = (s_e[0:k_s]).pow(0.5)
-    targetFeature = torch.mm(torch.mm(torch.mm(s_v[:,0:k_s],torch.diag(s_d)),(s_v[:,0:k_s].t())),whiten_cF)
-    targetFeature = targetFeature + s_mean.unsqueeze(1).expand_as(targetFeature)
+    w_step1 = torch.mm(c_v[:, 0:k_c], torch.diag(c_d))
+    w_step2 = torch.mm(w_step1, (c_v[:, 0:k_c].t()))
+    whitened = torch.mm(w_step2, cfv)
 
+    c_step1 = torch.mm(s_v[:, 0:s_k], torch.diag(s_d))
+    c_step2 = torch.mm(c_step1, s_v[:, 0:s_k].t())
+    colored = torch.mm(c_step2, whitened)
 
-    targetFeature = targetFeature.view_as(cf)
-    ccsF = alpha * targetFeature + (1.0 - alpha) * cf
-    ccsF = ccsF.float().unsqueeze(0)
+    target_features = colored + s_mean.resize_as_(colored)
+    target_features = target_features.view_as(cf)
 
-    # outf.data.resize_(ccsF.size()).copy_(ccsF)
+    ccsf = alpha * target_features + (1.0 - alpha) * cf
+    ccsf = ccsf.float().unsqueeze(0)
 
-    return ccsF
+    return ccsf
