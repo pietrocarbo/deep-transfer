@@ -11,7 +11,7 @@ def wctransform(alpha, cf, sf):
     c_mean = c_mean.unsqueeze(1).expand_as(cfv) # add dim and replicate mean on rows
     cfv = cfv - c_mean # subtract mean element-wise
 
-    c_covm = torch.mm(cfv, cfv.t()).div((c_width * c_height) - 1) # construct covariance matrix
+    c_covm = torch.mm(cfv, cfv.t()).div((c_width * c_height) - 1) + torch.eye(c_channels).double() # construct covariance matrix
     c_u, c_e, c_v = torch.svd(c_covm, some=False) # singular value decomposition
 
     k_c = c_channels

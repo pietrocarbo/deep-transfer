@@ -35,8 +35,9 @@ def tensor_imshow(tensor, title=None):
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
-    plt.pause(0.001)
-
+    if plt.isinteractive():
+        plt.ioff()
+    plt.show()
 
 # import torch
 # tensor_imshow(torch.randn(3, 256, 512), 'pytorch tensor')

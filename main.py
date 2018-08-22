@@ -1,9 +1,10 @@
 import os
+import torch
 import argparse
 import PairDataset
 import torchvision
 from imshow_utils import *
-import autoencoderWCT
+import autoencoder
 from log_utils import get_logger
 from torch.utils.data import DataLoader
 
@@ -30,11 +31,13 @@ def parse_args():
     parser.add_argument('--autoencoder4-vgg19', default='models/autoencoder_vgg19/vgg19_4', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv4_1')
     parser.add_argument('--autoencoder5-vgg19', default='models/autoencoder_vgg19/vgg19_5', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv5_1')
 
-    parser.add_argument('--outDir', default='./outputs', help='path of the directory where stylized results will be saved')
+    parser.add_argument('--outName', help='Name for the saved stylized results')
+    parser.add_argument('--outDir', default='./outputs', help='Path of the directory where stylized results will be saved')
 
-    parser.add_argument('--alpha', type=float, default=0.6, help='hyperparameter controlling the blending of WCT features and content features')
+    parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter controlling the blending of WCT features and content features')
 
-    parser.add_argument('--cuda', default='false', action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
+    parser.add_argument('--no-cuda', default=False, action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
+    parser.add_argument('--single-level', default=False, action='store_true', help='Flag to switch to single level stylization')
 
     return parser.parse_args()
 
@@ -71,6 +74,11 @@ def main():
     except Exception:
         log.exception('Error encoutered while creating output directory')
 
+    if not args.no_cuda and torch.cuda.is_available():
+        args.device = torch.device('cuda:0')
+    else:
+        args.device = torch.device('cpu')
+
     transforms = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
     ])
@@ -78,13 +86,20 @@ def main():
         else PairDataset.ContentStylePairDataset(args.contentDir, args.styleDir, content_transforms=transforms, style_transforms=transforms)
     cspd_loader = DataLoader(cspd, batch_size=1, shuffle=False, num_workers=0)
 
-    for sample in cspd_loader:
-        model = autoencoderWCT.SingleLevelWCT(args)
-        model.eval()
-        out = model(sample['content'], sample['style'])
-        tensor_imshow(out.detach().squeeze(0))
+    if args.single_level:
+        model = autoencoder.SingleLevelWCT(args)
+    else:
+        model = autoencoder.MultiLevelWCT(args)
 
+    model.to(device=args.device)
+    model.eval()
+
+    for i, sample in enumerate(cspd_loader):
+        content = sample['content'].to(device=args.device)
+        style = sample['style'].to(device=args.device)
+        out = model(content, style)
+        tensor_imshow(out.cpu().detach().squeeze(0))
+        # save out
 
 if __name__ == "__main__":
-    # execute only if run as a script
     main()
