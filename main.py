@@ -1,9 +1,9 @@
 import os
+import re
 import torch
 import argparse
 import PairDataset
 import torchvision
-from imshow_utils import *
 import autoencoder
 from log_utils import get_logger
 from torch.utils.data import DataLoader
@@ -13,8 +13,7 @@ folder = False
 
 # batch size, #workers, content/style resizes, autoencoders weights paths, beta to balance texture synthesis
 def parse_args():
-    parser = argparse.ArgumentParser(description='Pytorch implementation of arbitrary style transfer via CNN features WCT trasform',
-                                     epilog='The VGG19 encoder-decoder weights .t7 files MUST be in the directory ./models')
+    parser = argparse.ArgumentParser(description='Pytorch implementation of arbitrary style transfer via CNN features WCT trasform')
 
     parser.add_argument('--content', help='path of the content image(s) to be trasformed')
     parser.add_argument('--style', help='path of the style image(s) to use')
@@ -31,8 +30,8 @@ def parse_args():
     parser.add_argument('--autoencoder4-vgg19', default='models/autoencoder_vgg19/vgg19_4', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv4_1')
     parser.add_argument('--autoencoder5-vgg19', default='models/autoencoder_vgg19/vgg19_5', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv5_1')
 
-    parser.add_argument('--outName', help='Name for the saved stylized results')
-    parser.add_argument('--outDir', default='./outputs', help='Path of the directory where stylized results will be saved')
+    parser.add_argument('--outDir', default='outputs', help='Path of the directory where stylized results will be saved')
+    parser.add_argument('--outPrefix', help='Name prefixed in the saved stylized images')
 
     parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter controlling the blending of WCT features and content features')
 
@@ -59,6 +58,16 @@ def validate_args(args):
         ok = any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.contentDir)])
         ok &= any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.styleDir)])
         if not ok: raise ValueError('contentDir and styleDir must contain at least one image file')
+
+    if args.outDir != './outputs':
+        args.outDir = os.path.normpath(args.outDir)
+        if re.search(r'[^A-Za-z0-9-_\\\/]', args.outDir):
+            raise ValueError('outDir contains illegal characters')
+
+    if args.outPrefix:
+        args.outPrefix = os.path.normpath(args.outPrefix)
+        if re.search(r'[^A-Za-z0-9-_\\\/]', args.outPrefix):
+            raise ValueError('outPrefix contains illegal characters')
 
     if not 0. < args.alpha < 1.:
         raise ValueError('alpha value MUST be between 0 and 1')
@@ -98,8 +107,12 @@ def main():
         content = sample['content'].to(device=args.device)
         style = sample['style'].to(device=args.device)
         out = model(content, style)
-        tensor_imshow(out.cpu().detach().squeeze(0))
-        # save out
+
+        c_basename = os.path.basename(sample['contentPath'][0]).split('.')[0]
+        s_basename = os.path.basename(sample['stylePath'][0]).split('.')[0]
+        c_ext = os.path.basename(sample['contentPath'][0]).split('.')[-1]
+        torchvision.utils.save_image(out.cpu().detach().squeeze(0),
+             os.path.join(args.outDir, '' if not args.outPrefix else str(args.outPrefix) + '__' + str(c_basename) + '_stylizedby_' + str(s_basename) + '.' + str(c_ext)))
 
 if __name__ == "__main__":
     main()

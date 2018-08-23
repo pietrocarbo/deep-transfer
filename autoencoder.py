@@ -17,15 +17,17 @@ class SingleLevelWCT(nn.Module):
 
     def forward(self, content_img, style_img):
 
-        cf = self.e5(content_img).data.to(device=self.svd_device).squeeze(0)
-        sf = self.e5(style_img).data.to(device=self.svd_device).squeeze(0)
+        with torch.no_grad():
+            cf = self.e5(content_img).data.to(device=self.svd_device).squeeze(0)
+            sf = self.e5(style_img).data.to(device=self.svd_device).squeeze(0)
 
-        # csf = cf
-        # csf = csf.unsqueeze(0)
-        csf = wctransform(self.alpha, cf, sf)
-        csf = csf.to(device=self.device)
+            # csf = cf
+            # csf = csf.unsqueeze(0)
+            csf = wctransform(self.alpha, cf, sf)
+            cf, sf = None, None
 
-        out = self.d5(csf)
+            csf = csf.to(device=self.device)
+            out = self.d5(csf)
 
         return out
 
@@ -57,10 +59,12 @@ class MultiLevelWCT(nn.Module):
     def forward(self, content_img, style_img):
 
         def stylize_wct(l, content_f, style_f):
-            cf = self.encoders[l](content_f).data.to(device=self.svd_device).squeeze(0)
-            sf = self.encoders[l](style_f).data.to(device=self.svd_device).squeeze(0)
-            csf = wctransform(self.alpha, cf, sf).to(device=self.device)
-            return self.decoders[l](csf)
+            with torch.no_grad():
+                cf = self.encoders[l](content_f).data.to(device=self.svd_device).squeeze(0)
+                sf = self.encoders[l](style_f).data.to(device=self.svd_device).squeeze(0)
+                csf = wctransform(self.alpha, cf, sf).to(device=self.device)
+                cf, sf = None, None
+                return self.decoders[l](csf)
 
         for i in range(len(self.encoders)):
             content_img = stylize_wct(i, content_img, style_img)

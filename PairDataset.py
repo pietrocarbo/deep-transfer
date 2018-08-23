@@ -6,18 +6,18 @@ supported_img_formats = ('.png', '.jpg', '.jpeg')
 
 class ContentStylePairDataset(Dataset):
 
-    def __init__(self, contentPath, stylePath, content_transforms=None, style_transforms=None):
+    def __init__(self, content_path, style_path, content_transforms=None, style_transforms=None):
         super(Dataset, self).__init__()
         self.contentTransforms = content_transforms
         self.styleTransforms = style_transforms
 
-        if str(contentPath).endswith(supported_img_formats):
-            self.pairs_fn = [(contentPath, stylePath)]
+        if str(content_path).endswith(supported_img_formats):
+            self.pairs_fn = [(content_path, style_path)]
         else:
             self.pairs_fn = []
-            for c in os.listdir(contentPath):
-                for s in os.listdir(stylePath):
-                    self.pairs_fn.append((os.path.join(contentPath, c), os.path.join(stylePath, s)))
+            for c in os.listdir(content_path):
+                for s in os.listdir(style_path):
+                    self.pairs_fn.append((os.path.join(content_path, c), os.path.join(style_path, s)))
 
     def __len__(self):
         return len(self.pairs_fn)
