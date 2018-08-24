@@ -3,40 +3,33 @@ import re
 import torch
 import argparse
 import PairDataset
+import TripletDataset
 import torchvision
 import autoencoder
 from log_utils import get_logger
 from torch.utils.data import DataLoader
 
 log = get_logger()
-folder = False
 
-# batch size, #workers, content/style resizes, autoencoders weights paths, beta to balance texture synthesis
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Pytorch implementation of arbitrary style transfer via CNN features WCT trasform')
 
-    parser.add_argument('--content', help='path of the content image(s) to be trasformed')
-    parser.add_argument('--style', help='path of the style image(s) to use')
+    parser.add_argument('--content', help='Path of the content image (or a directory of images) to be trasformed')
+    parser.add_argument('--style', help='Path of the style image (or a directory of images) to use')
+    parser.add_argument('--stylePair', help='Path of two style images (separated by ",") to use in combination')
 
-    parser.add_argument('--contentDir', help='path of the directory containing the content images to be trasformed')
-    parser.add_argument('--styleDir', help='path of the directory containing the style images to be used')
-
-    parser.add_argument('--contentSize', type=int, help='New (minimum) size for the content image. To keep the original size set to 0') # default=768 in the paper
-    parser.add_argument('--styleSize', type=int, help='New (minimum) size for the style image. To keep the original size set to 0')
-
-    parser.add_argument('--autoencoder1-vgg19', default='models/autoencoder_vgg19/vgg19_1', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv1_1')
-    parser.add_argument('--autoencoder2-vgg19', default='models/autoencoder_vgg19/vgg19_2', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv2_1')
-    parser.add_argument('--autoencoder3-vgg19', default='models/autoencoder_vgg19/vgg19_3', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv3_1')
-    parser.add_argument('--autoencoder4-vgg19', default='models/autoencoder_vgg19/vgg19_4', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv4_1')
-    parser.add_argument('--autoencoder5-vgg19', default='models/autoencoder_vgg19/vgg19_5', help='Path to the folder containing .py files (models definition) and .pth files (weights) of VGG19 encoder and decoder upto conv5_1')
+    parser.add_argument('--contentSize', type=int, help='Reshape content image to have the new specified maximum size (keeping aspect ratio)') # default=768 in the paper
+    parser.add_argument('--styleSize', type=int, help='Reshape style image to have the new specified maximum size (keeping aspect ratio)')
 
     parser.add_argument('--outDir', default='outputs', help='Path of the directory where stylized results will be saved')
     parser.add_argument('--outPrefix', help='Name prefixed in the saved stylized images')
 
     parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter controlling the blending of WCT features and content features')
-
+    parser.add_argument('--beta', type=float, default=0.5, help='Hyperparameter controlling the interpolation between the two images in the stylePair')
     parser.add_argument('--no-cuda', default=False, action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
     parser.add_argument('--single-level', default=False, action='store_true', help='Flag to switch to single level stylization')
+    parser.add_argument('--synthesis', default=False, action='store_true', help='Flag to syntesize a new texture. Must provide a texture style image')
 
     return parser.parse_args()
 
@@ -44,20 +37,37 @@ def parse_args():
 def validate_args(args):
     supported_img_formats = ('.png', '.jpg', '.jpeg')
 
-    assert((args.content and args.style) or (args.contentDir and args.styleDir))
-    if args.content and args.style:
-        ok = os.path.isfile(args.content) and os.path.isfile(args.content)
-        ok &= os.path.splitext(args.content)[1].lower().endswith(supported_img_formats)
-        ok &= os.path.splitext(args.style)[1].lower().endswith(supported_img_formats)
-        if not ok: raise ValueError('content and style must be existing image paths')
-    else:
-        global folder
-        folder = True
-        if not os.path.isdir(args.contentDir) or not os.path.isdir(args.styleDir):
-            raise ValueError('contentDir and styleDir must be existing directory paths')
-        ok = any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.contentDir)])
-        ok &= any([os.path.splitext(file)[1].lower().endswith(supported_img_formats) for file in os.listdir(args.styleDir)])
-        if not ok: raise ValueError('contentDir and styleDir must contain at least one image file')
+    assert(   (args.content and args.style)   or (args.content and args.stylePair)
+           or (args.style and args.synthesis) or (args.stylePair and args.synthesis))
+
+    if args.content:
+        if os.path.isfile(args.content) and os.path.splitext(args.content)[-1].lower().endswith(supported_img_formats):
+            pass
+        elif os.path.isdir(args.content) and any([os.path.splitext(file)[-1].lower().endswith(supported_img_formats) for file in os.listdir(args.content)]):
+            pass
+        else:
+            raise ValueError('content must be an existing image file or a directory containing one image')
+
+    if args.style:
+        if os.path.isfile(args.style) and os.path.splitext(args.style)[-1].lower().endswith(supported_img_formats):
+            pass
+        elif os.path.isdir(args.style) and any([os.path.splitext(file)[-1].lower().endswith(supported_img_formats) for file in os.listdir(args.style)]):
+            pass
+        else:
+            raise ValueError('style must be an existing image file or a directory containing one image')
+
+    if args.stylePair:
+        if len(args.stylePair.split(',')) == 2:
+            args.style0 = args.stylePair.split(',')[0]
+            args.style1 = args.stylePair.split(',')[1]
+            if os.path.isfile(args.style0) and os.path.splitext(args.style0)[-1].lower().endswith(supported_img_formats) and \
+                    os.path.isfile(args.style1) and os.path.splitext(args.style1)[-1].lower().endswith(supported_img_formats):
+                pass
+            else:
+                raise ValueError('stylePair must be contain existing and supported image file paths')
+            pass
+        else:
+            raise ValueError('stylePair must be a comma separeted pair of image file paths')
 
     if args.outDir != './outputs':
         args.outDir = os.path.normpath(args.outDir)
@@ -69,8 +79,16 @@ def validate_args(args):
         if re.search(r'[^A-Za-z0-9-_\\\/]', args.outPrefix):
             raise ValueError('outPrefix contains illegal characters')
 
+    if args.contentSize and (args.contentSize <= 0 or args.contentSize > 3840):
+        raise ValueError('contentSize invalid value (should be between 0 and 3840)')
+    if args.styleSize and (args.styleSize <= 0 or args.styleSize > 3840):
+        raise ValueError('styleSize invalid value (should be between 0 and 3840)')
+
     if not 0. < args.alpha < 1.:
         raise ValueError('alpha value MUST be between 0 and 1')
+
+    if not 0. < args.beta < 1.:
+        raise ValueError('beta value MUST be between 0 and 1')
 
     return args
 
@@ -88,31 +106,66 @@ def main():
     else:
         args.device = torch.device('cpu')
 
-    transforms = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-    ])
-    cspd = PairDataset.ContentStylePairDataset(args.content, args.style, content_transforms=transforms, style_transforms=transforms) if not folder \
-        else PairDataset.ContentStylePairDataset(args.contentDir, args.styleDir, content_transforms=transforms, style_transforms=transforms)
-    cspd_loader = DataLoader(cspd, batch_size=1, shuffle=False, num_workers=0)
 
+    if args.stylePair:
+        dataset = TripletDataset.ContentStyleTripletDataset(args)
+    else:
+        dataset = PairDataset.ContentStylePairDataset(args)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+
+    if args.synthesis:  args.alpha = 1.0
     if args.single_level:
         model = autoencoder.SingleLevelWCT(args)
     else:
         model = autoencoder.MultiLevelWCT(args)
-
     model.to(device=args.device)
     model.eval()
 
-    for i, sample in enumerate(cspd_loader):
-        content = sample['content'].to(device=args.device)
-        style = sample['style'].to(device=args.device)
-        out = model(content, style)
+    for i, sample in enumerate(dataloader):
 
-        c_basename = os.path.basename(sample['contentPath'][0]).split('.')[0]
-        s_basename = os.path.basename(sample['stylePath'][0]).split('.')[0]
-        c_ext = os.path.basename(sample['contentPath'][0]).split('.')[-1]
-        torchvision.utils.save_image(out.cpu().detach().squeeze(0),
-             os.path.join(args.outDir, '' if not args.outPrefix else str(args.outPrefix) + '__' + str(c_basename) + '_stylizedby_' + str(s_basename) + '.' + str(c_ext)))
+        if args.stylePair:
+            s0_basename = str(os.path.basename(sample['style0Path'][0]).split('.')[0])
+            s0_ext = str(os.path.basename(sample['style0Path'][0]).split('.')[-1])
+            s1_basename = str(os.path.basename(sample['style1Path'][0]).split('.')[0])
+
+            content = sample['content'].to(device=args.device)
+            style0 = sample['style0'].to(device=args.device)
+            style1 = sample['style1'].to(device=args.device)
+
+            if args.synthesis:
+                for ii in range(1, 4):
+                    content = model(content, style0, True, style1)
+                    save_image(content, 'texture_iter' + str(ii), s0_basename + '_and_' + s1_basename, str(s0_ext), args)
+            else:
+                c_basename = str(os.path.basename(sample['contentPath'][0]).split('.')[0])
+                c_ext = str(os.path.basename(sample['contentPath'][0]).split('.')[-1])
+
+                out = model(content, style0, True, style1)
+                save_image(out, c_basename, s0_basename + '_and_' + s1_basename, c_ext, args)
+        else:
+            s_basename = str(os.path.basename(sample['stylePath'][0]).split('.')[0])
+            s_ext = str(os.path.basename(sample['stylePath'][0]).split('.')[-1])
+
+            content = sample['content'].to(device=args.device)
+            style = sample['style'].to(device=args.device)
+
+            if args.synthesis:
+                for ii in range(1, 4):
+                    content = model(content, style)
+                    save_image(content, 'texture_iter' + str(ii), s_basename, s_ext, args)
+            else:
+                c_basename = str(os.path.basename(sample['contentPath'][0]).split('.')[0])
+                c_ext = str(os.path.basename(sample['contentPath'][0]).split('.')[-1])
+
+                out = model(content, style)
+                save_image(out, c_basename, s_basename, c_ext, args)
+
+
+def save_image(img, content_name, style_name, out_ext, args):
+    torchvision.utils.save_image(img.cpu().detach().squeeze(0),
+     os.path.join(args.outDir,
+      (args.outPrefix + '_' if args.outPrefix else '') + content_name + '_stylized_by_' + style_name + '_alpha_' + str(int(args.alpha*100)) + '.' + out_ext))
+
 
 if __name__ == "__main__":
     main()
