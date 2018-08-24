@@ -3,8 +3,7 @@
 
 #### Features to test/add
 * masked style transfer
-* multiple style interpolation transfer
-* texture synthesis
+* test which wct() works best !!??
 
 #### TODOs
 * logging statements (improve errors clarity) 
