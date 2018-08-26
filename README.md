@@ -2,8 +2,7 @@
 
 
 #### Features to test/add
-* masked style transfer
-* test which wct() works best !!??
+* tune/test which wct() works best !!??
 
 #### TODOs
 * logging statements (improve errors clarity) 

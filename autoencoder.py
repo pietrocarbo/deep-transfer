@@ -1,18 +1,52 @@
+import PIL
 import torch
+from PIL import Image
 import torch.nn as nn
-from feature_transform import wc_transform as wct
+import torchvision.transforms.functional as transforms
+from feature_transforms import wct_transfer, wct_twostyles, wct_interpolation, wct_mask
 from encoder_decoder_vgg19 import Encoder, Decoder
 
 
-def stylize_wct(level, content, style0, encoders, decoders, alpha, svd_device, cnn_device, style1=None, beta=None):
+def stylize_wct(level, content, style0, encoders, decoders, alpha, svd_device, cnn_device, interpolation_beta=None, style1=None, mask_mode=None, mask=None):
     with torch.no_grad():
-        cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
-        s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
-        if beta:
+        if mask_mode:
+            cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
+            s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
             s1f = encoders[level](style1).data.to(device=svd_device).squeeze(0)
-            csf = wct(alpha, cf, s0f, s1f, beta).to(device=cnn_device)
+
+            cf_channels, cf_width, cf_height = cf.size(0), cf.size(1), cf.size(2)
+            mask = transforms.to_tensor(transforms.resize(mask, (cf_height, cf_width), interpolation=PIL.Image.NEAREST))
+
+            mask_view = mask.view(-1)
+            mask_view = torch.gt(mask_view, 0.5)
+            foreground_mask_ix = (mask_view == 1).nonzero().type(torch.LongTensor)
+            background_mask_ix = (mask_view == 0).nonzero().type(torch.LongTensor)
+
+            cf_view = cf.view(cf_channels, -1)
+            cf_fground_masked = torch.index_select(cf_view, 1, foreground_mask_ix.view(-1)).view(cf_channels, foreground_mask_ix.nelement())
+            cf_bground_masked = torch.index_select(cf_view, 1, background_mask_ix.view(-1)).view(cf_channels, background_mask_ix.nelement())
+
+            csf_fground = wct_mask(alpha, cf_fground_masked, s0f)
+            csf_bground = wct_mask(alpha, cf_bground_masked, s1f)
+
+            csf = torch.zeros_like(cf_view)
+            csf.index_copy_(1, foreground_mask_ix.view(-1), csf_fground)
+            csf.index_copy_(1, background_mask_ix.view(-1), csf_bground)
+            csf = csf.view_as(cf).unsqueeze(0).to(device=cnn_device)
+
+        elif interpolation_beta:
+            cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
+            s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
+            s1f = encoders[level](style1).data.to(device=svd_device).squeeze(0)
+
+            csf = wct_interpolation(alpha, cf, s0f, s1f, interpolation_beta).to(device=cnn_device)
+
         else:
-            csf = wct(alpha, cf, s0f).to(device=cnn_device)
+            cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
+            s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
+
+            csf = wct_transfer(alpha, cf, s0f).to(device=cnn_device)
+
         return decoders[level](csf)
 
 class SingleLevelWCT(nn.Module):
@@ -25,6 +59,14 @@ class SingleLevelWCT(nn.Module):
         self.alpha = args.alpha
         self.beta = args.beta
 
+        if args.mask:
+            self.mask_mode = True
+            self.mask = Image.open(args.mask).convert('1')
+        else:
+            self.mask_mode = False
+            self.mask = None
+
+
         self.e5 = Encoder(5)
         self.encoders = [self.e5]
         self.d5 = Decoder(5)
@@ -34,7 +76,7 @@ class SingleLevelWCT(nn.Module):
 
         if additional_style_flag:
             out = stylize_wct(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                              self.cnn_device, style1=style_img1, beta=self.beta)
+                              self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
         else:
             out = stylize_wct(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
                               self.cnn_device)
@@ -51,6 +93,13 @@ class MultiLevelWCT(nn.Module):
         self.cnn_device = args.device
         self.alpha = args.alpha
         self.beta = args.beta
+
+        if args.mask:
+            self.mask_mode = True
+            self.mask = Image.open(args.mask).convert('1')
+        else:
+            self.mask_mode = False
+            self.mask = None
 
         self.e1 = Encoder(1)
         self.e2 = Encoder(2)
@@ -71,7 +120,7 @@ class MultiLevelWCT(nn.Module):
         for i in range(len(self.encoders)):
             if additional_style_flag:
                 content_img = stylize_wct(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                                  self.cnn_device, style1=style_img1, beta=self.beta)
+                                          self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
             else:
                 content_img = stylize_wct(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
                                   self.cnn_device)

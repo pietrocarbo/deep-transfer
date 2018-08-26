@@ -17,7 +17,9 @@ def parse_args():
 
     parser.add_argument('--content', help='Path of the content image (or a directory of images) to be trasformed')
     parser.add_argument('--style', help='Path of the style image (or a directory of images) to use')
+    parser.add_argument('--synthesis', default=False, action='store_true', help='Flag to syntesize a new texture. Must provide a texture style image')
     parser.add_argument('--stylePair', help='Path of two style images (separated by ",") to use in combination')
+    parser.add_argument('--mask', help='Path of the mask image (white on black) to use in trasferring the style pair images in the corrisponding areas')
 
     parser.add_argument('--contentSize', type=int, help='Reshape content image to have the new specified maximum size (keeping aspect ratio)') # default=768 in the paper
     parser.add_argument('--styleSize', type=int, help='Reshape style image to have the new specified maximum size (keeping aspect ratio)')
@@ -29,7 +31,6 @@ def parse_args():
     parser.add_argument('--beta', type=float, default=0.5, help='Hyperparameter controlling the interpolation between the two images in the stylePair')
     parser.add_argument('--no-cuda', default=False, action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
     parser.add_argument('--single-level', default=False, action='store_true', help='Flag to switch to single level stylization')
-    parser.add_argument('--synthesis', default=False, action='store_true', help='Flag to syntesize a new texture. Must provide a texture style image')
 
     return parser.parse_args()
 
@@ -38,7 +39,8 @@ def validate_args(args):
     supported_img_formats = ('.png', '.jpg', '.jpeg')
 
     assert(   (args.content and args.style)   or (args.content and args.stylePair)
-           or (args.style and args.synthesis) or (args.stylePair and args.synthesis))
+           or (args.style and args.synthesis) or (args.stylePair and args.synthesis)
+           or (args.mask and args.content and args.stylePair))
 
     if args.content:
         if os.path.isfile(args.content) and os.path.splitext(args.content)[-1].lower().endswith(supported_img_formats):
@@ -68,6 +70,10 @@ def validate_args(args):
             pass
         else:
             raise ValueError('stylePair must be a comma separeted pair of image file paths')
+
+    if args.mask:
+        if os.path.isfile(args.mask) and os.path.splitext(args.mask)[-1].lower().endswith(supported_img_formats):
+            pass
 
     if args.outDir != './outputs':
         args.outDir = os.path.normpath(args.outDir)
