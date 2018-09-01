@@ -13,8 +13,6 @@ def path_imshow(path, title=None):
     else:
         plt.title(path)
     plt.pause(0.001)  # pause a bit so that plots are updated
-
-
 # path_imshow('image_tutorial-1.png', 21312)
 
 
@@ -25,8 +23,6 @@ def numpy_imshow(ndarr, title=None):
     if title is not None:
         plt.title(title)
     plt.pause(0.001)
-
-
 # numpy_imshow(np.random.rand(256, 512, 3), 'ndarr test')
 
 
@@ -40,7 +36,6 @@ def tensor_imshow(tensor, title=None):
     if plt.isinteractive():
         plt.ioff()
     plt.show()
-
 # import torch
 # tensor_imshow(torch.randn(3, 256, 512), 'pytorch tensor')
 

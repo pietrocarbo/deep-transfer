@@ -1,8 +1,10 @@
 import os
 import torch
 from im_utils import load_img
+from log_utils import get_logger
 from torch.utils.data import Dataset
 
+log = get_logger()
 supported_img_formats = ('.png', '.jpg', '.jpeg')
 
 class ContentStyleTripletDataset(Dataset):
@@ -21,7 +23,9 @@ class ContentStyleTripletDataset(Dataset):
         else:
             self.triplets_fn = []
             for c in os.listdir(args.content):
-                self.triplets_fn.append((os.path.join(args.content, c), args.style0, args.style1))
+                path_triplet = (os.path.join(args.content, c), args.style0, args.style1)
+                log.info('Adding: ' + str(path_triplet) + ' to the dataset')
+                self.triplets_fn.append(path_triplet)
 
     def __len__(self):
         return len(self.triplets_fn)

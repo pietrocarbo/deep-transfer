@@ -1,8 +1,10 @@
 import os
 import torch
+from log_utils import get_logger
 from im_utils import load_img
 from torch.utils.data import Dataset
 
+log = get_logger()
 supported_img_formats = ('.png', '.jpg', '.jpeg')
 
 class ContentStylePairDataset(Dataset):
@@ -20,7 +22,9 @@ class ContentStylePairDataset(Dataset):
             self.pairs_fn = []
             for c in os.listdir(args.content):
                 for s in os.listdir(args.style):
-                    self.pairs_fn.append((os.path.join(args.content, ('texture' if args.synthesis else c)), os.path.join(args.style, s)))
+                    path_pair = (os.path.join(args.content, ('texture' if args.synthesis else c)), os.path.join(args.style, s))
+                    log.info('Adding: ' + str(path_pair) + ' to the dataset')
+                    self.pairs_fn.append(path_pair)
 
     def __len__(self):
         return len(self.pairs_fn)

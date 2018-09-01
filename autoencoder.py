@@ -2,17 +2,24 @@ import PIL
 import torch
 from PIL import Image
 import torch.nn as nn
-import torchvision.transforms.functional as transforms
-from feature_transforms import wct_transfer, wct_twostyles, wct_interpolation, wct_mask
+from log_utils import get_logger
+from feature_transforms import wct, wct_mask
 from encoder_decoder_vgg19 import Encoder, Decoder
+import torchvision.transforms.functional as transforms
 
 
-def stylize_wct(level, content, style0, encoders, decoders, alpha, svd_device, cnn_device, interpolation_beta=None, style1=None, mask_mode=None, mask=None):
+log = get_logger()
+
+
+def stylize(level, content, style0, encoders, decoders, alpha, svd_device, cnn_device, interpolation_beta=None, style1=None, mask_mode=None, mask=None):
+    log.debug('Stylization up to ReLu' + level + ' of content sized: ' + str(content.size()) + ' and style sized: ' + str(style0.size()))
+
     with torch.no_grad():
         if mask_mode:
             cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
             s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
             s1f = encoders[level](style1).data.to(device=svd_device).squeeze(0)
+            log.debug('mask-mode: content features size: ' + str(cf.size()) + ', style 0 features size: ' + str(s0f.size()) + ', style 1 features size: ' + str(s1f.size()))
 
             cf_channels, cf_width, cf_height = cf.size(0), cf.size(1), cf.size(2)
             mask = transforms.to_tensor(transforms.resize(mask, (cf_height, cf_width), interpolation=PIL.Image.NEAREST))
@@ -21,31 +28,37 @@ def stylize_wct(level, content, style0, encoders, decoders, alpha, svd_device, c
             mask_view = torch.gt(mask_view, 0.5)
             foreground_mask_ix = (mask_view == 1).nonzero().type(torch.LongTensor)
             background_mask_ix = (mask_view == 0).nonzero().type(torch.LongTensor)
+            log.debug('mask-mode: ' + str((foreground_mask_ix.nelement() // background_mask_ix.nelement()) * 100) + '% of the mask is foreground')
 
             cf_view = cf.view(cf_channels, -1)
             cf_fground_masked = torch.index_select(cf_view, 1, foreground_mask_ix.view(-1)).view(cf_channels, foreground_mask_ix.nelement())
             cf_bground_masked = torch.index_select(cf_view, 1, background_mask_ix.view(-1)).view(cf_channels, background_mask_ix.nelement())
 
-            csf_fground = wct_mask(alpha, cf_fground_masked, s0f)
-            csf_bground = wct_mask(alpha, cf_bground_masked, s1f)
+            csf_fground = wct_mask(cf_fground_masked, s0f)
+            csf_bground = wct_mask(cf_bground_masked, s1f)
 
             csf = torch.zeros_like(cf_view)
             csf.index_copy_(1, foreground_mask_ix.view(-1), csf_fground)
             csf.index_copy_(1, background_mask_ix.view(-1), csf_bground)
-            csf = csf.view_as(cf).unsqueeze(0).to(device=cnn_device)
+            csf = csf.view_as(cf)
+
+            csf = alpha * csf + (1.0 - alpha) * cf
+            csf = csf.unsqueeze(0).to(device=cnn_device)
 
         elif interpolation_beta:
             cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
             s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
             s1f = encoders[level](style1).data.to(device=svd_device).squeeze(0)
+            log.debug('interpolation-mode: content features size: ' + str(cf.size()) + ', style 0 features size: ' + str(s0f.size()) + ', style 1 features size: ' + str(s1f.size()))
 
-            csf = wct_interpolation(alpha, cf, s0f, s1f, interpolation_beta).to(device=cnn_device)
+            csf = wct(alpha, cf, s0f, s1f, interpolation_beta).to(device=cnn_device)
 
         else:
             cf = encoders[level](content).data.to(device=svd_device).squeeze(0)
             s0f = encoders[level](style0).data.to(device=svd_device).squeeze(0)
+            log.debug('transfer-mode: content features size: ' + str(cf.size()) + ', style features size: ' + str(s0f.size()))
 
-            csf = wct_transfer(alpha, cf, s0f).to(device=cnn_device)
+            csf = wct(alpha, cf, s0f).to(device=cnn_device)
 
         return decoders[level](csf)
 
@@ -75,11 +88,11 @@ class SingleLevelWCT(nn.Module):
     def forward(self, content_img, style_img, additional_style_flag=False, style_img1=None):
 
         if additional_style_flag:
-            out = stylize_wct(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                              self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
+            out = stylize(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
+                          self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
         else:
-            out = stylize_wct(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                              self.cnn_device)
+            out = stylize(0, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
+                          self.cnn_device)
 
         return out
 
@@ -119,10 +132,10 @@ class MultiLevelWCT(nn.Module):
 
         for i in range(len(self.encoders)):
             if additional_style_flag:
-                content_img = stylize_wct(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                                          self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
+                content_img = stylize(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
+                                      self.cnn_device, interpolation_beta=self.beta, style1=style_img1, mask_mode=self.mask_mode, mask=self.mask)
             else:
-                content_img = stylize_wct(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
-                                  self.cnn_device)
+                content_img = stylize(i, content_img, style_img, self.encoders, self.decoders, self.alpha, self.svd_device,
+                                      self.cnn_device)
 
         return content_img

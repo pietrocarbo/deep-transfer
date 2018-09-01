@@ -1,12 +1,7 @@
 # deep-transfer
 
-
-#### Features to test/add
-* tune/test which wct() works best !!??
-
 #### TODOs
-* logging statements (improve errors clarity) 
-* comments/code documentation
+
 
 #### Result analysis
 * cubic/bilinear/nearest upsampling
