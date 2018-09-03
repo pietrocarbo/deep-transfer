@@ -180,7 +180,7 @@ def main():
             style = sample['style'].to(device=args.device)
 
             if args.synthesis:
-                for ii in range(1, 3):
+                for ii in range(1, 4):
                     content = model(content, style)
                     save_image(content, 'texture_iter' + str(ii), s_basename, s_ext, args)
             else:

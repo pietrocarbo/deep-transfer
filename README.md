@@ -1,11 +1,14 @@
 # deep-transfer
 
 
-
-
-
 #### TODOs
 ...
+
+##### code for grid 
+images = []
+for im_fn in sorted(os.listdir("outputs/test")):
+    images.append(load_img(os.path.join("outputs/test", im_fn), None))
+save_image(images, "outputs/grid.jpg", nrow=9)
 
 #### Result analysis
 * cubic/bilinear/nearest upsampling
