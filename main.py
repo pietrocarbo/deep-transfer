@@ -163,8 +163,6 @@ def main():
                     content = model(content, style0, True, style1)
                     save_image(content, 'texture_iter' + str(ii), s0_basename + '_and_' + s1_basename, str(s0_ext), args)
             else:
-                log.info('content: ' + str(sample['contentPath']) + '\tstyle: ' + str(sample['stylePath']))
-
                 c_basename = str(os.path.basename(sample['contentPath'][0]).split('.')[0])
                 c_ext = str(os.path.basename(sample['contentPath'][0]).split('.')[-1])
 

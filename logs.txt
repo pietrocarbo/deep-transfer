@@ -1,5 +1,5 @@
-2018-09-03 21:27:55,644 - [INFO] - log_utils - Utilizing the first CUDA gpu available
-2018-09-03 21:27:55,645 - [INFO] - log_utils - Creating content and style pairs dataset object
-2018-09-03 21:27:55,646 - [INFO] - log_utils - Using single-level stylization pipeline
-2018-09-03 21:27:57,260 - [INFO] - log_utils - Starting 0/1 stylization iteration
-2018-09-03 21:27:57,260 - [INFO] - log_utils - content: ['texture']	style: ['C:\\Users\\batti\\Desktop\\Style Transfer\\datasets\\textures_dtd\\images\\fibrous\\fibrous_0140.jpg']
+2018-09-03 21:57:55,274 - [INFO] - log_utils - Utilizing the first CUDA gpu available
+2018-09-03 21:57:55,275 - [INFO] - log_utils - Creating content and (two) styles triplets dataset object
+2018-09-03 21:57:55,276 - [INFO] - log_utils - Using multi-level stylization pipeline
+2018-09-03 21:57:57,229 - [INFO] - log_utils - Starting 0/1 stylization iteration
+2018-09-03 21:57:57,229 - [INFO] - log_utils - content: ['inputs/contents/in1.jpg']	style 1: ['inputs/styles/in1.jpg']	style 2: ['inputs/styles/tiger.jpg']
