@@ -43,12 +43,13 @@ def tensor_imshow(tensor, title=None):
 def load_img(path, new_size):
     img = Image.open(path).convert(mode='RGB')
     if new_size:
-        width, height = img.size
-        max_dim_ix = np.argmax(img.size)
-        if max_dim_ix == 0:
-            new_shape = (int(new_size * (height / width)), new_size)
-            img = transforms.resize(img, new_shape, PIL.Image.BICUBIC)
-        else:
-            new_shape = (new_size, int(new_size * (width / height)))
-            img = transforms.resize(img, new_shape, PIL.Image.BICUBIC)
+        img = transforms.resize(img, (new_size, new_size), PIL.Image.BICUBIC)
+        # width, height = img.size
+        # max_dim_ix = np.argmax(img.size)
+        # if max_dim_ix == 0:
+        #     new_shape = (int(new_size * (height / width)), new_size)
+        #     img = transforms.resize(img, new_shape, PIL.Image.BICUBIC)
+        # else:
+        #     new_shape = (new_size, int(new_size * (width / height)))
+        #     img = transforms.resize(img, new_shape, PIL.Image.BICUBIC)
     return transforms.to_tensor(img)

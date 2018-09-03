@@ -1,7 +1,11 @@
 # deep-transfer
 
-#### TODOs
 
+
+
+
+#### TODOs
+...
 
 #### Result analysis
 * cubic/bilinear/nearest upsampling

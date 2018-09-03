@@ -16,8 +16,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Pytorch implementation of arbitrary style transfer via CNN features WCT trasform',
                                      epilog='Supported image file formats are: jpg, jpeg, png')
 
-    parser.add_argument('--content', help='Path of the content image (or a directory of images) to be trasformed')
-    parser.add_argument('--style', help='Path of the style image (or a directory of images) to use')
+    parser.add_argument('--content', help='Path of the content image (or a directory containing images) to be trasformed')
+    parser.add_argument('--style', help='Path of the style image (or a directory containing images) to use')
     parser.add_argument('--synthesis', default=False, action='store_true', help='Flag to syntesize a new texture. Must provide a texture style image')
     parser.add_argument('--stylePair', help='Path of two style images (separated by ",") to use in combination')
     parser.add_argument('--mask', help='Path of the binary mask image (white on black) to trasfer the style pair in the corrisponding areas')
@@ -28,8 +28,8 @@ def parse_args():
     parser.add_argument('--outDir', default='outputs', help='Path of the directory where stylized results will be saved')
     parser.add_argument('--outPrefix', help='Name prefixed in the saved stylized images')
 
-    parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter controlling the blending of WCT features and content features')
-    parser.add_argument('--beta', type=float, default=0.5, help='Hyperparameter controlling the interpolation between the two images in the stylePair')
+    parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter balancing the blending between original content features and WCT-transformed features')
+    parser.add_argument('--beta', type=float, default=0.5, help='Hyperparameter balancing the interpolation between the two images in the stylePair')
     parser.add_argument('--no-cuda', default=False, action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
     parser.add_argument('--single-level', default=False, action='store_true', help='Flag to switch to single level stylization')
 
@@ -81,7 +81,7 @@ def validate_args(args):
 
     if args.outDir != './outputs':
         args.outDir = os.path.normpath(args.outDir)
-        if re.search(r'[^A-Za-z0-9-_\\\/]', args.outDir):
+        if re.search(r'[^A-Za-z0-9- :_\\\/]', args.outDir):
             raise ValueError("--outDir '" + args.outDir + "' contains illegal characters")
 
     if args.outPrefix:
@@ -148,7 +148,7 @@ def main():
         log.info('Starting ' + str(i) + '/'+ str(len(dataloader)) + ' stylization iteration')
 
         if args.stylePair:
-            log.info('content: ' + sample['contentPath'] + '\tstyle 1: ' + sample['style0Path'] + '\tstyle 2: ' + sample['style1Path'])
+            log.info('content: ' + str(sample['contentPath']) + '\tstyle 1: ' + str(sample['style0Path']) + '\tstyle 2: ' + str(sample['style1Path']))
 
             s0_basename = str(os.path.basename(sample['style0Path'][0]).split('.')[0])
             s0_ext = str(os.path.basename(sample['style0Path'][0]).split('.')[-1])
@@ -163,7 +163,7 @@ def main():
                     content = model(content, style0, True, style1)
                     save_image(content, 'texture_iter' + str(ii), s0_basename + '_and_' + s1_basename, str(s0_ext), args)
             else:
-                log.info('content: ' + sample['contentPath'] + '\tstyle: ' + sample['stylePath'])
+                log.info('content: ' + str(sample['contentPath']) + '\tstyle: ' + str(sample['stylePath']))
 
                 c_basename = str(os.path.basename(sample['contentPath'][0]).split('.')[0])
                 c_ext = str(os.path.basename(sample['contentPath'][0]).split('.')[-1])
@@ -171,7 +171,7 @@ def main():
                 out = model(content, style0, True, style1)
                 save_image(out, c_basename, s0_basename + '_and_' + s1_basename, c_ext, args)
         else:
-            log.info('content: ' + sample['contentPath'] + '\tstyle: ' + sample['stylePath'])
+            log.info('content: ' + str(sample['contentPath']) + '\tstyle: ' + str(sample['stylePath']))
 
             s_basename = str(os.path.basename(sample['stylePath'][0]).split('.')[0])
             s_ext = str(os.path.basename(sample['stylePath'][0]).split('.')[-1])

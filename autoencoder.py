@@ -12,7 +12,7 @@ log = get_logger()
 
 
 def stylize(level, content, style0, encoders, decoders, alpha, svd_device, cnn_device, interpolation_beta=None, style1=None, mask_mode=None, mask=None):
-    log.debug('Stylization up to ReLu' + level + ' of content sized: ' + str(content.size()) + ' and style sized: ' + str(style0.size()))
+    log.debug('Stylization up to ReLu' + str(level) + ' of content sized: ' + str(content.size()) + ' and style sized: ' + str(style0.size()))
 
     with torch.no_grad():
         if mask_mode:
