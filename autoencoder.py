@@ -28,7 +28,7 @@ def stylize(level, content, style0, encoders, decoders, alpha, svd_device, cnn_d
             mask_view = torch.gt(mask_view, 0.5)
             foreground_mask_ix = (mask_view == 1).nonzero().type(torch.LongTensor)
             background_mask_ix = (mask_view == 0).nonzero().type(torch.LongTensor)
-            log.debug('mask-mode: ' + str((foreground_mask_ix.nelement() // background_mask_ix.nelement()) * 100) + '% of the mask is foreground')
+            log.debug('mask-mode: ' + str((foreground_mask_ix.nelement() / mask_view.nelement()) * 100) + '% of the mask is foreground')
 
             cf_view = cf.view(cf_channels, -1)
             cf_fground_masked = torch.index_select(cf_view, 1, foreground_mask_ix.view(-1)).view(cf_channels, foreground_mask_ix.nelement())

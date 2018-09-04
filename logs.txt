@@ -1,5 +1,5 @@
-2018-09-03 21:57:55,274 - [INFO] - log_utils - Utilizing the first CUDA gpu available
-2018-09-03 21:57:55,275 - [INFO] - log_utils - Creating content and (two) styles triplets dataset object
-2018-09-03 21:57:55,276 - [INFO] - log_utils - Using multi-level stylization pipeline
-2018-09-03 21:57:57,229 - [INFO] - log_utils - Starting 0/1 stylization iteration
-2018-09-03 21:57:57,229 - [INFO] - log_utils - content: ['inputs/contents/in1.jpg']	style 1: ['inputs/styles/in1.jpg']	style 2: ['inputs/styles/tiger.jpg']
+2018-09-04 11:00:20,261 - [INFO] - log_utils - Utilizing the first CUDA gpu available
+2018-09-04 11:00:20,262 - [INFO] - log_utils - Creating content and (two) styles triplets dataset object
+2018-09-04 11:00:20,263 - [INFO] - log_utils - Using multi-level stylization pipeline
+2018-09-04 11:00:22,170 - [INFO] - log_utils - Starting 0/1 stylization iteration
+2018-09-04 11:00:22,170 - [INFO] - log_utils - content: ['outputs\\face.jpg']	style 1: ['outputs\\cubism.jpg']	style 2: ['outputs\\189.jpg']
