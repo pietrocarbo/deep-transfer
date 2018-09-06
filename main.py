@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--outDir', default='outputs', help='Path of the directory where stylized results will be saved')
     parser.add_argument('--outPrefix', help='Name prefixed in the saved stylized images')
 
-    parser.add_argument('--alpha', type=float, default=0.6, help='Hyperparameter balancing the blending between original content features and WCT-transformed features')
+    parser.add_argument('--alpha', type=float, default=0.2, help='Hyperparameter balancing the blending between original content features and WCT-transformed features')
     parser.add_argument('--beta', type=float, default=0.5, help='Hyperparameter balancing the interpolation between the two images in the stylePair')
     parser.add_argument('--no-cuda', default=False, action='store_true', help='Flag to enables GPU (CUDA) accelerated computations')
     parser.add_argument('--single-level', default=False, action='store_true', help='Flag to switch to single level stylization')
