@@ -10,7 +10,7 @@ Whitening and Coloring Transformation on the content and style feature
 in the bottleneck layer.   
 
 ## Installation
-+ Needed Python packages can be installed using `conda` package manager by `conda env create -f environment.yaml`
++ Needed Python packages can be installed using `conda` package manager by running `conda env create -f environment.yaml`
 
 ## Functionalities
 Available modalities are:
