@@ -1,0 +1,44 @@
+name: deeptransfer
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - blas=1.0=mkl
+  - ca-certificates=2018.03.07=0
+  - certifi=2018.8.13=py36_0
+  - cffi=1.11.5=py36h945400d_0
+  - cycler=0.10.0=py36h009560c_0
+  - freetype=2.9.1=ha9979f8_1
+  - icc_rt=2017.0.4=h97af966_0
+  - icu=58.2=ha66f8fd_1
+  - intel-openmp=2018.0.3=0
+  - jpeg=9b=hb83a4c4_2
+  - kiwisolver=1.0.1=py36h6538335_0
+  - libpng=1.6.34=h79bbb47_0
+  - matplotlib=2.2.3=py36hd159220_0
+  - mkl=2018.0.3=1
+  - mkl_fft=1.0.4=py36h1e22a9b_1
+  - mkl_random=1.0.1=py36h77b88f5_1
+  - numpy=1.15.0=py36h9fa60d3_0
+  - numpy-base=1.15.0=py36h4a99626_0
+  - openssl=1.0.2p=hfa6e2cd_0
+  - pip=10.0.1=py36_0
+  - pycparser=2.18=py36_1
+  - pyparsing=2.2.0=py36_1
+  - pyqt=5.9.2=py36ha878b3d_0
+  - python=3.6.6=hea74fb7_0
+  - python-dateutil=2.7.3=py36_0
+  - pytz=2018.5=py36_0
+  - qt=5.9.6=vc14h62aca36_0
+  - setuptools=40.0.0=py36_0
+  - sip=4.19.8=py36h6538335_0
+  - six=1.11.0=py36_1
+  - sqlite=3.24.0=h7602738_0
+  - tornado=5.1=py36hfa6e2cd_0
+  - vc=14.1=h0510ff6_3
+  - vs2015_runtime=15.5.2=3
+  - wheel=0.31.1=py36_0
+  - wincertstore=0.2=py36h7fe50ca_0
+  - zlib=1.2.11=h8395fce_2
+  - pytorch=0.4.1=py36_cuda90_cudnn7he774522_1
+

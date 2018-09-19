@@ -1,6 +1,12 @@
 # deep-transfer
 
-Pytorch implementation of Universal Style Transfer via WCT trasform.
+This is a Pytorch implementation of the "Universal Style Transfer via Feature Trasforms" NIPS17 [paper](https://arxiv.org/abs/1705.08086).
+
+## Requirements 
++ Python environment with the following packages
+    + PyTorch
+    + torchvision
+    
 
 ## Usage
 main.py [-h] [--content CONTENT] [--style STYLE] [--synthesis]
