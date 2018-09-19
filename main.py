@@ -40,9 +40,7 @@ def validate_args(args):
     supported_img_formats = ('.png', '.jpg', '.jpeg')
 
     # assert that we have a combinations of cli args meaningful to perform some task
-    assert(   (args.content and args.style)   or (args.content and args.stylePair)
-           or (args.style and args.synthesis) or (args.stylePair and args.synthesis)
-           or (args.mask and args.content and args.stylePair))
+    assert((args.content and args.style)   or (args.content and args.stylePair) or (args.style and args.synthesis) or (args.stylePair and args.synthesis) or (args.mask and args.content and args.stylePair))
 
     if args.content:
         if os.path.isfile(args.content) and os.path.splitext(args.content)[-1].lower().endswith(supported_img_formats):
