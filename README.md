@@ -15,19 +15,19 @@ in the bottleneck layer.
 ## Functionalities
 Available modalities are:
 + __style transfer__ (inputs: a _content image_ and a _style image_);
-  <img src="outputs/pair-grid/grid-transfer.jpg" width="400" height="300" />
+  <br><img src="outputs/pair-grid/grid-transfer.jpg" width="400" height="300" />
   
 + __texture synthesis__ (inputs: a _texture style image_);
-  <img src="outputs/pairtex-grid/grid-synthesis.jpg" width="400" height="300" />
+  <br><img src="outputs/pairtex-grid/grid-synthesis.jpg" width="400" height="300" />
 
 + __style transfer interpolation__ (inputs: a _content image_ and _2 style images_);
-  <img src="outputs/triplet-grid/grid-twostyles.jpg" width="600" height="300" />
+  <br><img src="outputs/triplet-grid/grid-twostyles.jpg" width="600" height="300" />
 
 + __texture synthesis interpolation__ (inputs: _2 texture style images_);
-  <img src="outputs/pair-grid/grid-transfer.jpg" width="400" height="300" />
+  <br>
 
 + __spatial control over stylization__ (inputs: a _content image_, a _binary mask_ of the same size and _2 style images_ for background-foreground stylization).
-  <img src="outputs/spatial-grid/grid-face_cubism-spatial.jpg" width="600" height="300" />
+  <br><img src="outputs/spatial-grid/grid-face_cubism-spatial.jpg" width="600" height="300" />
 
 ## Usage
 `python main.py ARGS`
