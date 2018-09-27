@@ -43,7 +43,7 @@ def tensor_imshow(tensor, title=None):
 def load_img(path, new_size):
     img = Image.open(path).convert(mode='RGB')
     if new_size:
-        # fixed-size squared resizing
+        # for fixed-size squared resizing, leave only the following line uncommented in this if statement
         # img = transforms.resize(img, (new_size, new_size), PIL.Image.BICUBIC)
         width, height = img.size
         max_dim_ix = np.argmax(img.size)

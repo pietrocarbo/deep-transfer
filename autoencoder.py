@@ -4,7 +4,7 @@ from PIL import Image
 import torch.nn as nn
 from log_utils import get_logger
 from feature_transforms import wct, wct_mask
-from encoder_decoder_vgg19 import Encoder, Decoder
+from encoder_decoder_factory import Encoder, Decoder
 import torchvision.transforms.functional as transforms
 
 

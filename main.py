@@ -183,9 +183,14 @@ def main():
                 c_basename = str(os.path.basename(sample['contentPath'][0]).split('.')[0])
                 c_ext = str(os.path.basename(sample['contentPath'][0]).split('.')[-1])
 
+                from timeit import default_timer as timer
+                start = timer()
                 out = model(content, style)
-                save_image(out, c_basename, s_basename, c_ext, args)
+                end = timer()
+                log.info('Wall-clock time took for stylization: ' + str(end - start) + 's')
+                # save_image(out, c_basename, s_basename, c_ext, args)
 
+    log.info('Stylization completed, exiting.')
 
 if __name__ == "__main__":
     main()
